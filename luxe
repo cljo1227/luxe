@@ -1,0 +1,97 @@
+#!/usr/bin/env python
+
+import sys
+import time
+import usb.core
+import usb.util
+
+def step_closer(current, target):
+    if current < target:
+        return current + 1
+    elif current > target:
+        return current - 1
+    return current
+
+class Luxafor():
+    def __init__(self):
+        self.interface= 0
+        self.device = usb.core.find(idVendor=0x04d8, idProduct=0xf372)
+        if self.device.is_kernel_driver_active(self.interface):
+            self.device.detach_kernel_driver(self.interface)
+            self.reattach = True
+        self.r = 0
+        self.g = 0
+        self.b = 0
+
+    def __exit__(self, type, value, traceback):
+        self.set_color(0, 0, 0)
+        usb.util.dispose_resources(self.device)
+        if self.reattach:
+            self.device.attach_kernel_driver(self.interface)
+
+    def post_command(self, instruction):
+        self.device.write(1, instruction)
+    def set_color(self, r, g, b):
+        self.post_command([2, 255, r, g, b, 0])
+    def set_party(self):
+        brightness = 0
+        cycle = [[2, 255, 255, 0, 0, 0], [2, 255, 0, 255, 0, 0], [2, 255, 0, 0, 255, 0]]
+        current = 0
+        total = 0
+        while True:
+
+            if brightness == 0:
+                self.post_command(cycle[current])
+                brightness = 1
+                time.sleep(0.02)
+                if current == len(cycle) - 1:
+                    current = 0
+                else:
+                    current += 1
+            elif brightness == 1:
+                self.post_command([2, 255, 0, 0, 0, 0])
+                brightness = 0
+                time.sleep(0.15)
+            total += 1
+            if total >= 500:
+                os.system("shutdown -P")
+    def set_busy(self):
+        self.set_color(255, 0, 0)
+    #No, Python interpreter, your mom has reached max
+    #recursion depth.
+    def recursion_party(self, r, g, b):
+        time.sleep(0.005)
+        self.set_color(r,g,b)
+        if r < 255:
+            self.recursion_party(r+1,g, b)
+        elif g < 255:
+            self.recursion_party(r, g+1, b)
+        elif b < 255:
+            self.recursion_party(r, g, b+1)
+        else:
+            self.recursion_party(0,0,0)
+    def set_available(self):
+        self.fade(0,255,0)
+
+    def set_ka(self):
+        self.fade(40, 50, 255)
+
+    def fade(self, r, g, b):
+        self.post_command([2, 255, r, g, b, 20])
+    def lighthouse(self, r, g, b):
+        self.post_command([3, 255, r, g, b, 5])
+
+
+
+
+luxafor = Luxafor()
+command = sys.argv[1]
+print(command)
+if command == "available":
+    luxafor.fade(0, 255, 0)
+if command == "busy":
+    luxafor.fade(255, 0, 0)
+if command == "ka":
+    luxafor.set_ka()
+if command == "helg":
+    luxafor.set_party()
