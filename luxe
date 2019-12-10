@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 import time
@@ -36,6 +36,7 @@ class Luxafor():
                 [2, 255, 0, 0, 255, 0]]
         current = 0
         total = 0
+        shutdown_started = False
         while True:
 
             if brightness == 0:
@@ -51,8 +52,9 @@ class Luxafor():
                 brightness = 0
                 time.sleep(0.15)
             total += 1
-            if total >= 500:
-                os.system("shutdown -P")
+            if total >= 500 and not shutdown_started:
+                shutdown_started = True
+                os.system("shutdown -P now")
     def set_busy(self):
         self.set_color(255, 0, 0)
 
